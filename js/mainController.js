@@ -4,8 +4,8 @@ angular
   .module('fireideaz')
 
   .controller('MainCtrl', ['$scope', '$filter', '$window', 'Utils', 'Auth',
-    '$rootScope', 'FirebaseService', 'ModalService', 'VoteService',
-    function ($scope, $filter, $window, utils, auth, $rootScope, firebaseService, modalService, voteService) {
+    '$rootScope', 'FirebaseService', 'ModalService', 'VoteService', 'BoardService',
+    function ($scope, $filter, $window, utils, auth, $rootScope, firebaseService, modalService, voteService, boardService) {
       $scope.loading = true;
       $scope.messageTypes = utils.messageTypes;
       $scope.utils = utils;
@@ -20,27 +20,11 @@ angular
         mapping: []
       };
 
-      $scope.closeAllModals = function () {
-        modalService.closeAll();
-      };
-
-      $scope.getNumberOfVotesOnMessage = function (userId, messageId) {
-        return new Array(voteService.returnNumberOfVotesOnMessage(userId, messageId));
-      };
-
-      $scope.droppedEvent = function (dragEl, dropEl) {
-        var drag = $('#' + dragEl);
-        var drop = $('#' + dropEl);
-        var dragMessageRef = firebaseService.getMessageRef($scope.userId, drag.attr('messageId'));
-
-        dragMessageRef.once('value', function () {
-          dragMessageRef.update({
-            type: {
-              id: drop.data('column-id')
-            }
-          });
-        });
-      };
+      function addMessageCallback(message) {
+        var id = message.key;
+        angular.element($('#' + id)).scope().isEditing = true;
+        $('#' + id).find('textarea').focus();
+      }
 
       function getBoardAndMessages(userData) {
         $scope.userId = $window.location.hash.substring(1) || '499sm';
@@ -66,6 +50,33 @@ angular
         $scope.messages = firebaseService.newFirebaseArray(messagesRef);
         $scope.loading = false;
       }
+
+      function redirectToBoard() {
+        window.location.href = window.location.origin +
+          window.location.pathname + '#' + $scope.userId;
+      }
+
+      $scope.closeAllModals = function () {
+        modalService.closeAll();
+      };
+
+      $scope.getNumberOfVotesOnMessage = function (userId, messageId) {
+        return new Array(voteService.returnNumberOfVotesOnMessage(userId, messageId));
+      };
+
+      $scope.droppedEvent = function (dragEl, dropEl) {
+        var drag = $('#' + dragEl);
+        var drop = $('#' + dropEl);
+        var dragMessageRef = firebaseService.getMessageRef($scope.userId, drag.attr('messageId'));
+
+        dragMessageRef.once('value', function () {
+          dragMessageRef.update({
+            type: {
+              id: drop.data('column-id')
+            }
+          });
+        });
+      };
 
       $scope.isColumnSelected = function (type) {
         return parseInt($scope.selectedType) === parseInt(type);
@@ -104,11 +115,6 @@ angular
         }
       };
 
-      function redirectToBoard() {
-        window.location.href = window.location.origin +
-          window.location.pathname + '#' + $scope.userId;
-      }
-
       $scope.isBoardNameInvalid = function () {
         return !$scope.newBoard.name;
       };
@@ -123,21 +129,14 @@ angular
         $scope.userId = utils.createUserId();
 
         var callback = function (userData) {
-          var board = firebaseService.getBoardRef($scope.userId);
-          board.set({
-            boardId: $scope.newBoard.name,
-            date_created: new Date().toString(),
-            columns: $scope.messageTypes,
-            user_id: userData.uid,
-            max_votes: $scope.newBoard.max_votes || 6
-          }, function (error) {
-            if (error) {
-              $scope.loading = false;
-            } else {
-              redirectToBoard();
-            }
+          boardService.createBoard(
+            userData, $scope.userId, $scope.newBoard, function (error) {
+              if (error) {
+                $scope.loading = false;
+              } else {
+                redirectToBoard();
+              }
           });
-
           $scope.newBoard.name = '';
         };
 
@@ -196,12 +195,6 @@ angular
         $scope.messages.$remove(message);
         modalService.closeAll();
       };
-
-      function addMessageCallback(message) {
-        var id = message.key;
-        angular.element($('#' + id)).scope().isEditing = true;
-        $('#' + id).find('textarea').focus();
-      }
 
       $scope.addNewMessage = function (type) {
         $scope.messages.$add({
