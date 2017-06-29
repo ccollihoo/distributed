@@ -157,13 +157,7 @@ angular
       };
 
       $scope.addNewColumn = function (name) {
-        $scope.board.columns.push({
-          value: name,
-          id: utils.getNextId($scope.board)
-        });
-
-        boardService.addColumns($scope.userId, utils.toObject($scope.board.columns));
-
+        boardService.addColumn(name, $scope.board, $scope.userId);
         modalService.closeAll();
       };
 
