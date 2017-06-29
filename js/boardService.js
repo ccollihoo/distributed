@@ -15,8 +15,20 @@ angular
       }, boardCreationCallback);
     };
 
+    var getBoard = function (userId) {
+      return firebaseService.getBoardRef(userId);
+    };
+
+    var addColumns = function (userId, columns) {
+      var boardColumns = firebaseService.getBoardColumns(userId);
+      boardColumns.set(columns);
+    };
+
+
     return {
-      createBoard: createBoard
+      createBoard: createBoard,
+      getBoard: getBoard,
+      addColumns: addColumns
     };
 
   }]);

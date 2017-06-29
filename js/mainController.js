@@ -30,7 +30,7 @@ angular
         $scope.userId = $window.location.hash.substring(1) || '499sm';
 
         var messagesRef = firebaseService.getMessagesRef($scope.userId);
-        var board = firebaseService.getBoardRef($scope.userId);
+        var board = boardService.getBoard($scope.userId);
 
         board.on('value', function (board) {
           if (board.val() === null) {
@@ -162,8 +162,7 @@ angular
           id: utils.getNextId($scope.board)
         });
 
-        var boardColumns = firebaseService.getBoardColumns($scope.userId);
-        boardColumns.set(utils.toObject($scope.board.columns));
+        boardService.addColumns($scope.userId, utils.toObject($scope.board.columns));
 
         modalService.closeAll();
       };
